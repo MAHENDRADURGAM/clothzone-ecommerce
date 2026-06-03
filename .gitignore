@@ -1,0 +1,6 @@
+config.php
+db.php
+config.local.php
+.env
+/vendor
+/node_modules
