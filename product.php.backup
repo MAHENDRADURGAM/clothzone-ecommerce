@@ -1,0 +1,48 @@
+<?php
+include "config.php";
+include "aliexpress_api.php";
+
+if (!isset($_GET['id'])) {
+    die("Product ID missing.");
+}
+
+$id = $_GET['id'];
+
+// API endpoint for item detail
+$endpoint = "product/" . $id;
+
+$response = aliAPI($endpoint);
+
+// If API failed
+if (!$response || isset($response['error'])) {
+    die("<h3>API Error: Could not load product.</h3>");
+}
+
+$product = $response['result'] ?? null;
+
+if (!$product) {
+    die("Product not found.");
+}
+
+?>
+<!DOCTYPE html>
+<html>
+<head>
+    <title><?php echo $product['title']; ?></title>
+    <style>
+        body { font-family: Arial; padding: 20px; }
+        img { width: 300px; height: 300px; object-fit: cover; }
+    </style>
+</head>
+<body>
+
+<h1><?php echo $product['title']; ?></h1>
+
+<img src="<?php echo $product['image']; ?>" alt="">
+
+<p><b>Price:</b> <?php echo $product['price']; ?></p>
+<p><b>Description:</b></p>
+<p><?php echo $product['description']; ?></p>
+
+</body>
+</html>

@@ -1,0 +1,35 @@
+<?php
+include "config/config.php";
+include "aliexpress_api.php";
+
+$id = $_GET['id'] ?? '';
+if (!$id) { die('Product ID missing.'); }
+
+$response = aliAPI('product/' . $id);
+
+if (!$response) { die('API returned no response.'); }
+if (isset($response['error'])) { die('API Error: '.$response['error']); }
+
+// try to locate product data
+$product = null;
+if (isset($response['data']) && isset($response['data']['result'])) $product = $response['data']['result'];
+if (!$product && isset($response['result'])) $product = $response['result'];
+if (!$product && isset($response['data'])) $product = $response['data'];
+if (!$product && isset($response['item'])) $product = $response['item'];
+if (!$product && is_array($response)) $product = $response;
+
+// pick useful fields
+$title = $product['title'] ?? $product['productTitle'] ?? ($product['name'] ?? 'No title');
+$image = $product['image'] ?? $product['image_url'] ?? ($product['imageUrl'] ?? '');
+$price = $product['price'] ?? $product['sale_price'] ?? ($product['priceText'] ?? '');
+$desc = $product['description'] ?? $product['desc'] ?? '';
+
+?><!DOCTYPE html><html><head><meta charset="utf-8"><title><?php echo htmlspecialchars($title); ?></title>
+<style>body{font-family:Arial;padding:20px} img{width:300px;height:300px;object-fit:cover}</style>
+</head><body>
+<h1><?php echo htmlspecialchars($title); ?></h1>
+<?php if ($image): ?><img src="<?php echo htmlspecialchars($image); ?>" alt=""><?php endif; ?>
+<p><b>Price:</b> <?php echo htmlspecialchars($price); ?></p>
+<h3>Description</h3>
+<p><?php echo nl2br(htmlspecialchars($desc)); ?></p>
+</body></html>

@@ -1,0 +1,206 @@
+<?php
+include 'db.php';
+
+// ===== FILTER HANDLING =====
+$conditions = [];
+$orderSQL = "ORDER BY id DESC";
+
+// Category filter
+if (isset($_GET['category']) && $_GET['category'] != "" && $_GET['category'] != "All") {
+    $cat = mysqli_real_escape_string($conn, $_GET['category']);
+    $conditions[] = "category = '$cat'";
+}
+
+// Search filter
+if (isset($_GET['search']) && $_GET['search'] != "") {
+    $search = mysqli_real_escape_string($conn, $_GET['search']);
+    $conditions[] = "(name LIKE '%$search%' OR category LIKE '%$search%')";
+}
+
+// Price filter
+if (isset($_GET['price'])) {
+    $p = $_GET['price'];
+
+    if ($p == "below500") $conditions[] = "price < 500";
+    if ($p == "500to1000") $conditions[] = "price BETWEEN 500 AND 1000";
+    if ($p == "above1000") $conditions[] = "price > 1000";
+}
+
+// Sorting
+if (isset($_GET['sort'])) {
+    if ($_GET['sort'] == "low") $orderSQL = "ORDER BY price ASC";
+    if ($_GET['sort'] == "high") $orderSQL = "ORDER BY price DESC";
+}
+
+// Build final SQL
+$whereSQL = "";
+if (count($conditions) > 0) {
+    $whereSQL = "WHERE " . implode(" AND ", $conditions);
+}
+
+$sql = "SELECT * FROM products $whereSQL $orderSQL";
+$result = mysqli_query($conn, $sql);
+
+?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>All Products</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="assets/css/premium.css">
+
+    <style>
+        /* Page layout */
+        .page-flex {
+            display: flex;
+            gap: 30px;
+            max-width: 1200px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 260px;
+            background: var(--card);
+            padding: 20px;
+            border-radius: var(--radius);
+            color: white;
+            box-shadow: var(--shadow);
+            height: fit-content;
+        }
+
+        .sidebar h3 {
+            margin-top: 0;
+            margin-bottom: 10px;
+        }
+
+        .sidebar a {
+            color: var(--muted);
+            text-decoration: none;
+            display: block;
+            padding: 8px 0;
+            font-size: 15px;
+        }
+
+        .sidebar a:hover {
+            color: var(--white);
+        }
+
+        /* Search + Sort row */
+        .top-controls {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .search-box input {
+            padding: 12px;
+            border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.08);
+            background: var(--glass);
+            color: white;
+            width: 260px;
+        }
+
+        select {
+            padding: 12px;
+            background: var(--glass);
+            color: white;
+            border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.08);
+        }
+    </style>
+
+</head>
+
+<body>
+
+<?php include 'nav.php'; ?>
+
+<!-- PAGE LAYOUT -->
+<div class="page-flex">
+
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+        <h3>Category</h3>
+        <a href="products.php?category=All">All</a>
+        <a href="products.php?category=Men">Men</a>
+        <a href="products.php?category=Women">Women</a>
+        <a href="products.php?category=Kids">Kids</a>
+
+        <hr style="border-color: rgba(255,255,255,0.1); margin:18px 0;">
+
+        <h3>Price</h3>
+        <a href="products.php?price=below500">Below ₹500</a>
+        <a href="products.php?price=500to1000">₹500 – ₹1000</a>
+        <a href="products.php?price=above1000">Above ₹1000</a>
+        <a href="products.php">All Prices</a>
+    </div>
+
+    <!-- MAIN AREA -->
+    <div style="flex:1;">
+
+        <!-- SEARCH + SORT -->
+        <div class="top-controls">
+
+            <!-- Search -->
+            <form method="GET" class="search-box">
+                <input type="text" name="search" placeholder="Search..."
+                       value="<?php if(isset($_GET['search'])) echo $_GET['search']; ?>">
+            </form>
+
+            <!-- Sort dropdown -->
+            <form method="GET">
+                <select name="sort" onchange="this.form.submit()">
+                    <option value="">Sort</option>
+                    <option value="low" <?php if(isset($_GET['sort']) && $_GET['sort']=="low") echo "selected"; ?>>
+                        Price: Low to High
+                    </option>
+                    <option value="high" <?php if(isset($_GET['sort']) && $_GET['sort']=="high") echo "selected"; ?>>
+                        Price: High to Low
+                    </option>
+                </select>
+            </form>
+        </div>
+
+        <!-- PRODUCTS GRID -->
+        <div class="products-grid">
+            <?php 
+            while ($p = mysqli_fetch_assoc($result)) { 
+                $img = $p['image'];
+                $name = $p['name'];
+                $price = number_format($p['price'], 2);
+                $id = $p['id'];
+            ?>
+                <div class="card product" style="padding:12px;">
+                    <a href="product_details.php?id=<?php echo $id; ?>">
+                        <img src="<?php echo $img; ?>" style="border-radius:10px; width:100%; height:220px; object-fit:cover;">
+                    </a>
+
+                    <div style="padding-top:12px;">
+                        <a href="product_details.php?id=<?php echo $id; ?>" style="color:white; text-decoration:none;">
+                            <div class="name" style="font-weight:700; font-size:16px;"><?php echo $name; ?></div>
+                        </a>
+
+                        <div class="price" style="margin-top:8px;">₹<?php echo $price; ?></div>
+
+                        <div style="margin-top:12px;">
+                            <a class="btn btn-small btn-primary" href="product_details.php?id=<?php echo $id; ?>">View</a>
+                            <a class="btn btn-small btn-ghost" href="add_to_cart.php?id=<?php echo $id; ?>" style="margin-left:8px;">Add to cart</a>
+                        </div>
+                    </div>
+                </div>
+            <?php } ?>
+        </div>
+
+    </div>
+
+</div>
+
+</body>
+</html>

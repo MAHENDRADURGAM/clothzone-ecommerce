@@ -1,0 +1,31 @@
+<?php
+
+function aliAPI($endpoint) {
+
+    $url = "https://ali-express1.p.rapidapi.com/" . $endpoint;
+
+    $headers = [
+        "x-rapidapi-host: ali-express1.p.rapidapi.com",
+        "x-rapidapi-key: 127885cd19msh55c1999eef5c41cp12412djsn790ef4fad021"
+    ];
+
+    $curl = curl_init();
+
+    curl_setopt_array($curl, [
+        CURLOPT_URL => $url,
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_FOLLOWLOCATION => true,
+        CURLOPT_HTTPHEADER => $headers
+    ]);
+
+    $response = curl_exec($curl);
+
+    if (curl_errno($curl)) {
+        return ["error" => curl_error($curl)];
+    }
+
+    curl_close($curl);
+
+    return json_decode($response, true);
+}
+?>
